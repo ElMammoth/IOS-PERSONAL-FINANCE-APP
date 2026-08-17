@@ -1,6 +1,8 @@
 import SwiftUI
 import CoreData
 
+/// Lists the planned budget per category, split by Expense / Income.
+/// Categories created here are what `AddTransactionView` offers to pick from.
 struct BudgetPlanningView: View {
     // MARK: - Environment
     @Environment(\.managedObjectContext) private var viewContext
@@ -56,16 +58,13 @@ struct BudgetPlanningView: View {
 
             Spacer()
         }
-        // Removed navigationTitle("Budget Planning") so it doesn't display
         .toolbar {
-            // “+ Add a budget” on the LEFT
             ToolbarItem(placement: .navigationBarLeading) {
                 NavigationLink(destination: AddBudgetView()) {
                     Text("+ Add a budget")
                         .font(.headline)
                 }
             }
-            // Gear icon on the RIGHT
             ToolbarItem(placement: .navigationBarTrailing) {
                 NavigationLink(destination: SettingsView()) {
                     Image(systemName: "gearshape")

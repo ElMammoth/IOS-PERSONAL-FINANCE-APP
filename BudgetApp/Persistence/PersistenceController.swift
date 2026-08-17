@@ -1,16 +1,17 @@
-// Persistence.swift
+// PersistenceController.swift
 
 import CoreData
 
+/// Owns the Core Data stack for the app.
 struct PersistenceController {
     static let shared = PersistenceController()
 
-    // Instance pour les aperçus et les tests
+    /// In-memory stack seeded with sample data, used by SwiftUI previews and tests
+    /// so they never touch the on-disk store.
     static var preview: PersistenceController = {
         let result = PersistenceController(inMemory: true)
         let viewContext = result.container.viewContext
-        
-        // Exemples de transactions
+
         for i in 0..<3 {
             let newTransaction = Transaction(context: viewContext)
             newTransaction.id = UUID()
@@ -19,19 +20,17 @@ struct PersistenceController {
             newTransaction.amount = Double(i + 1) * 50.0
             newTransaction.date = Date()
         }
-        
+
         do {
             try viewContext.save()
         } catch {
-            // Gérer les erreurs de sauvegarde
             let nsError = error as NSError
             fatalError("Unresolved error \(nsError), \(nsError.userInfo)")
         }
-        
+
         return result
     }()
 
-    // Initialise le PersistenceController
     let container: NSPersistentContainer
 
     init(inMemory: Bool = false) {
@@ -41,7 +40,6 @@ struct PersistenceController {
         }
         container.loadPersistentStores { _, error in
             if let error = error as NSError? {
-                // Gérer l’erreur de chargement du store
                 fatalError("Unresolved error \(error), \(error.userInfo)")
             }
         }

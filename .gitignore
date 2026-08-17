@@ -1,0 +1,26 @@
+# macOS
+.DS_Store
+
+# Xcode build output
+build/
+DerivedData/
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Per-developer Xcode state (window layout, breakpoints, scheme ordering)
+xcuserdata/
+*.xcuserstate
+*.xcscmblueprint
+*.xccheckout
+
+# Swift Package Manager
+.swiftpm/
+.build/
+Packages/
+
+# CocoaPods / Carthage (unused here, ignored in case they are added later)
+Pods/
+Carthage/Build/

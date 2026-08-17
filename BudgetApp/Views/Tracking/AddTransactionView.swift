@@ -1,58 +1,55 @@
 import SwiftUI
 import CoreData
 
-struct EditTransactionView: View {
-    // The transaction to edit
-    @ObservedObject var transaction: Transaction
-
-    // Environments
+/// Form for recording a new transaction against an existing budget category.
+struct AddTransactionView: View {
+    // MARK: - Environment
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.presentationMode) var presentationMode
     @EnvironmentObject var currencyManager: CurrencyManager
 
-    // States for editing
+    // MARK: - State
     @State private var selectedType: String = "Expense"
     @State private var transactionName: String = ""
     @State private var selectedCategory: String = ""
     @State private var amountString: String = ""
     @State private var transactionDate: Date = Date()
 
-    // FetchRequest for categories
+    // MARK: - FetchRequests for Categories
+    // Categories are not a separate entity: the available categories are simply
+    // the budgets the user has already created, split by type.
     @FetchRequest(
-        sortDescriptors: [NSSortDescriptor(keyPath: \Budget.category, ascending: true)],
+        sortDescriptors: [
+            NSSortDescriptor(keyPath: \Budget.category, ascending: true)
+        ],
         predicate: NSPredicate(format: "type == %@", "Expense"),
         animation: .default
     )
     private var expenseBudgets: FetchedResults<Budget>
 
     @FetchRequest(
-        sortDescriptors: [NSSortDescriptor(keyPath: \Budget.category, ascending: true)],
+        sortDescriptors: [
+            NSSortDescriptor(keyPath: \Budget.category, ascending: true)
+        ],
         predicate: NSPredicate(format: "type == %@", "Income"),
         animation: .default
     )
     private var incomeBudgets: FetchedResults<Budget>
 
-    // Initializer to pre-fill states
-    init(transaction: Transaction) {
-        self.transaction = transaction
-        _selectedType = State(initialValue: transaction.type ?? "Expense")
-        _transactionName = State(initialValue: transaction.title ?? "")
-        _selectedCategory = State(initialValue: transaction.category ?? "")
-        _amountString = State(initialValue: String(format: "%.2f", transaction.amount))
-        _transactionDate = State(initialValue: transaction.date ?? Date())
-    }
-
+    // MARK: - Body
     var body: some View {
         NavigationView {
             Form {
-                // Transaction Type (MenuPickerStyle)
+                // Section for transaction type
                 Section(header: Text("Type")) {
-                    Picker("Type", selection: $selectedType) {
+                    Picker("Transaction Type", selection: $selectedType) {
                         Text("Income").tag("Income")
                         Text("Expense").tag("Expense")
                     }
                     .pickerStyle(MenuPickerStyle())
                     .onChange(of: selectedType) { _ in
+                        // The category list depends on the type, so clear a
+                        // selection that no longer belongs to it.
                         selectedCategory = ""
                     }
                 }
@@ -62,49 +59,48 @@ struct EditTransactionView: View {
                     TextField("Ex: Rent, Salary, etc.", text: $transactionName)
                 }
 
-                // Category
+                // Category Picker
                 Section(header: Text("Category")) {
                     Picker("Select Category", selection: $selectedCategory) {
                         Text("Select one...").tag("")
-                        
                         if selectedType == "Expense" {
                             ForEach(expenseBudgets, id: \.self) { bud in
-                                Text(bud.category ?? "Unknown").tag(bud.category ?? "")
+                                Text(bud.category ?? "Unknown")
+                                    .tag(bud.category ?? "")
                             }
                         } else {
                             ForEach(incomeBudgets, id: \.self) { bud in
-                                Text(bud.category ?? "Unknown").tag(bud.category ?? "")
+                                Text(bud.category ?? "Unknown")
+                                    .tag(bud.category ?? "")
                             }
                         }
                     }
                     .pickerStyle(MenuPickerStyle())
                 }
 
-                // Amount (no currency symbol text)
+                // Amount
                 Section(header: Text("Amount")) {
                     TextField("Enter amount", text: $amountString)
                         .keyboardType(.decimalPad)
-                    // Removed the line that displayed currencyManager.selectedSymbol
                 }
 
-                // Date
+                // Transaction Date
                 Section(header: Text("Date")) {
                     DatePicker("Select Date", selection: $transactionDate, displayedComponents: .date)
                 }
 
-                // Save button
+                // Save Button
                 Section {
-                    Button(action: saveChanges) {
-                        Text("Save Changes")
+                    Button(action: saveTransaction) {
+                        Text("Save")
                             .frame(maxWidth: .infinity, alignment: .center)
                     }
                     .disabled(transactionName.isEmpty || selectedCategory.isEmpty || amountString.isEmpty)
                 }
             }
-            .navigationTitle("Edit Transaction")
+            .navigationTitle("Add Transaction")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                // Cancel button
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") {
                         presentationMode.wrappedValue.dismiss()
@@ -114,19 +110,23 @@ struct EditTransactionView: View {
         }
     }
 
-    // Save changes to existing transaction
-    private func saveChanges() {
+    // MARK: - Save
+    private func saveTransaction() {
+        // The Save button is disabled on empty fields, so this guard only rejects
+        // text that is not a positive number.
         guard let amountValue = Double(amountString), amountValue > 0 else {
-            // handle invalid amount
             return
         }
 
-        transaction.type = selectedType
-        transaction.title = transactionName
-        transaction.category = selectedCategory
-        transaction.amount = amountValue
-        transaction.date = transactionDate
+        let newTx = Transaction(context: viewContext)
+        newTx.id = UUID()
+        newTx.type = selectedType
+        newTx.title = transactionName
+        newTx.category = selectedCategory
+        newTx.amount = amountValue
+        newTx.date = transactionDate
 
+        // Persist
         do {
             try viewContext.save()
             presentationMode.wrappedValue.dismiss()
@@ -137,20 +137,11 @@ struct EditTransactionView: View {
     }
 }
 
-struct EditTransactionView_Previews: PreviewProvider {
+struct AddTransactionView_Previews: PreviewProvider {
     static var previews: some View {
-        let viewContext = PersistenceController.preview.container.viewContext
-        let sampleTx = Transaction(context: viewContext)
-        sampleTx.id = UUID()
-        sampleTx.type = "Expense"
-        sampleTx.title = "Rent"
-        sampleTx.category = "Housing"
-        sampleTx.amount = 800
-        sampleTx.date = Date()
-
-        return NavigationView {
-            EditTransactionView(transaction: sampleTx)
-                .environment(\.managedObjectContext, viewContext)
+        NavigationView {
+            AddTransactionView()
+                .environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
                 .environmentObject(CurrencyManager())
         }
     }
