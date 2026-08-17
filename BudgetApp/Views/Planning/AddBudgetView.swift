@@ -1,6 +1,7 @@
 import SwiftUI
 import CoreData
 
+/// Form for creating a budget category and its planned amount.
 struct AddBudgetView: View {
     // MARK: - Environment
     @Environment(\.managedObjectContext) private var viewContext
@@ -37,7 +38,6 @@ struct AddBudgetView: View {
                 Section(header: Text("AMOUNT")) {
                     TextField("Enter amount", text: $amountString)
                         .keyboardType(.decimalPad)
-                    // Removed the line showing the current currency symbol
                 }
 
                 // Save Button
@@ -54,10 +54,11 @@ struct AddBudgetView: View {
         }
     }
 
-    // MARK: - Méthodes
+    // MARK: - Save
     private func saveBudget() {
+        // The Save button is disabled on empty fields, so this guard only rejects
+        // text that is not a positive number.
         guard let amountValue = Double(amountString), amountValue > 0 else {
-            // Handle invalid amount
             return
         }
 

@@ -3,6 +3,7 @@
 import SwiftUI
 import CoreData
 
+/// Form for editing an existing budget category in place.
 struct EditBudgetView: View {
     // MARK: - Observed Object
     @ObservedObject var budget: Budget
@@ -10,17 +11,17 @@ struct EditBudgetView: View {
     // MARK: - Environment
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.presentationMode) var presentationMode
-    @EnvironmentObject var currencyManager: CurrencyManager  // Accès au symbole monétaire
+    @EnvironmentObject var currencyManager: CurrencyManager
 
     // MARK: - State
-    @State private var selectedType: String = "Expense"  // Valeur par défaut
+    @State private var selectedType: String = "Expense"
     @State private var categoryName: String = ""
     @State private var amountString: String = ""
 
-    // Types possibles pour le Picker
     private let budgetTypes = ["Expense", "Income"]
 
     // MARK: - Initializer
+    /// Seeds the editable state from the budget being edited.
     init(budget: Budget) {
         self.budget = budget
         _selectedType = State(initialValue: budget.type ?? "Expense")
@@ -32,7 +33,6 @@ struct EditBudgetView: View {
     var body: some View {
         NavigationView {
             Form {
-                // Sélecteur de Type (Expense / Income)
                 Section(header: Text("Type")) {
                     Picker("Budget Type", selection: $selectedType) {
                         ForEach(budgetTypes, id: \.self) { type in
@@ -42,13 +42,11 @@ struct EditBudgetView: View {
                     .pickerStyle(MenuPickerStyle())
                 }
 
-                // Nom de la Catégorie
                 Section(header: Text("CATEGORY NAME")) {
                     TextField("Ex: Rent, Salary, etc.", text: $categoryName)
                         .autocapitalization(.words)
                 }
 
-                // Montant (avec le symbole monétaire)
                 Section(header: Text("AMOUNT")) {
                     HStack {
                         TextField("Enter amount", text: $amountString)
@@ -58,7 +56,6 @@ struct EditBudgetView: View {
                     }
                 }
 
-                // Bouton Save Changes
                 Section {
                     Button(action: saveChanges) {
                         Text("Save Changes")
@@ -70,7 +67,6 @@ struct EditBudgetView: View {
             .navigationTitle("Edit Budget")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                // Bouton Cancel en haut à gauche
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") {
                         presentationMode.wrappedValue.dismiss()
@@ -81,7 +77,7 @@ struct EditBudgetView: View {
     }
 
     // MARK: - Validation
-    /// Vérifie si le montant saisi est un nombre valide et positif
+    /// True when the entered text parses as a positive number.
     private func isValidAmount() -> Bool {
         if let amount = Double(amountString), amount > 0 {
             return true
@@ -90,23 +86,19 @@ struct EditBudgetView: View {
     }
 
     // MARK: - Save Changes
-    /// Sauvegarde les modifications apportées au budget dans Core Data
+    /// Writes the edited values back to the managed object and saves the context.
     private func saveChanges() {
-        // Validation du montant
         guard let amountValue = Double(amountString), amountValue > 0 else {
-            // Afficher une alerte ou gérer l'erreur selon les besoins
             return
         }
 
-        // Mettre à jour les propriétés du budget
-        budget.type = selectedType   // "Expense" ou "Income"
+        budget.type = selectedType   // "Expense" or "Income"
         budget.category = categoryName
         budget.amount = amountValue
 
-        // Sauvegarder le contexte Core Data
         do {
             try viewContext.save()
-            presentationMode.wrappedValue.dismiss()  // Fermer la vue
+            presentationMode.wrappedValue.dismiss()
         } catch {
             let nsError = error as NSError
             fatalError("Unresolved error \(nsError), \(nsError.userInfo)")
@@ -117,17 +109,16 @@ struct EditBudgetView: View {
 // MARK: - Preview
 struct EditBudgetView_Previews: PreviewProvider {
     static var previews: some View {
-        // Exemple de Budget pour l’aperçu
         let viewContext = PersistenceController.preview.container.viewContext
         let sampleBudget = Budget(context: viewContext)
         sampleBudget.id = UUID()
         sampleBudget.type = "Expense"
-        sampleBudget.category = "Loyer"
+        sampleBudget.category = "Rent"
         sampleBudget.amount = 1000.0
 
         return NavigationView {
             EditBudgetView(budget: sampleBudget)
-                .environmentObject(CurrencyManager()) // Injection du CurrencyManager
+                .environmentObject(CurrencyManager())
                 .environment(\.managedObjectContext, viewContext)
         }
     }

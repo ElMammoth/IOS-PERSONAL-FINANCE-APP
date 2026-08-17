@@ -1,9 +1,9 @@
 import SwiftUI
 
+/// Root view: the three top-level tabs of the app.
 struct ContentView: View {
     var body: some View {
         TabView {
-            // Onglet 1 : Dashboard
             NavigationView {
                 DashboardView()
             }
@@ -11,7 +11,6 @@ struct ContentView: View {
                 Label("Dashboard", systemImage: "house")
             }
 
-            // Onglet 2 : Budget Tracking
             NavigationView {
                 BudgetTrackingView()
             }
@@ -19,7 +18,6 @@ struct ContentView: View {
                 Label("Tracking", systemImage: "chart.bar")
             }
 
-            // Onglet 3 : Budget Planning
             NavigationView {
                 BudgetPlanningView()
             }

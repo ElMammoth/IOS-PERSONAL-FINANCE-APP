@@ -1,12 +1,6 @@
-//
-//  BudgetAppUITestsLaunchTests.swift
-//  BudgetAppUITests
-//
-//  Created by Cyprien Metivier—Robcis on 03/01/2025.
-//
-
 import XCTest
 
+/// Captures a screenshot of the launch screen for each target UI configuration.
 final class BudgetAppUITestsLaunchTests: XCTestCase {
 
     override class var runsForEachTargetApplicationUIConfiguration: Bool {
@@ -21,9 +15,6 @@ final class BudgetAppUITestsLaunchTests: XCTestCase {
     func testLaunch() throws {
         let app = XCUIApplication()
         app.launch()
-
-        // Insert steps here to perform after app launch but before taking a screenshot,
-        // such as logging into a test account or navigating somewhere in the app
 
         let attachment = XCTAttachment(screenshot: app.screenshot())
         attachment.name = "Launch Screen"

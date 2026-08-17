@@ -1,23 +1,31 @@
 import SwiftUI
 import CoreData
 
+/// Monthly overview: income and expense totals for the selected month, plus a
+/// progress bar per budget category showing tracked spend against the plan.
 struct DashboardView: View {
     // MARK: - Environment
     @Environment(\.managedObjectContext) private var viewContext
     @EnvironmentObject var currencyManager: CurrencyManager
 
     // MARK: - State
-    @State private var selectedMonth: Int = 1
-    @State private var selectedYear: Int = 2023
+    @State private var selectedMonth: Int = Calendar.current.component(.month, from: Date())
+    @State private var selectedYear: Int = Calendar.current.component(.year, from: Date())
     @State private var selectedCategory: TransactionCategory = .expense
 
+    /// Raw values must match the `type` strings written to Core Data.
     enum TransactionCategory: String, CaseIterable {
-        case expense = "Expense" // Ensured singular form matches Core Data
+        case expense = "Expense"
         case income  = "Income"
     }
-    
+
     private let months = Array(1...12)
-    private let years  = [2022, 2023, 2024, 2025]
+
+    /// Selectable years, centred on the current one so the picker never goes stale.
+    private let years: [Int] = {
+        let currentYear = Calendar.current.component(.year, from: Date())
+        return Array((currentYear - 3)...(currentYear + 1))
+    }()
 
     // MARK: - FetchRequest for Transactions
     @FetchRequest(
@@ -95,30 +103,29 @@ struct DashboardView: View {
                     .padding(.vertical, 4)
                 }
             }
-            .listStyle(PlainListStyle()) // Maintain consistent list style
+            .listStyle(PlainListStyle())
         }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             // MARK: - Left side: Month/Year pickers side by side
             ToolbarItem(placement: .navigationBarLeading) {
-                HStack(spacing: 8) { // Reduced spacing to fit in one line
-                    // Month Picker with Abbreviated Names
+                // Fixed widths and tight spacing keep both pickers on one line.
+                HStack(spacing: 8) {
                     Picker("Month", selection: $selectedMonth) {
                         ForEach(months, id: \.self) { month in
                             Text(monthName(from: month)).tag(month)
                         }
                     }
                     .pickerStyle(MenuPickerStyle())
-                    .frame(width: 80) // Fixed width to ensure fit
-                    
-                    // Year Picker
+                    .frame(width: 80)
+
                     Picker("Year", selection: $selectedYear) {
                         ForEach(years, id: \.self) { year in
                             Text("\(year)").tag(year)
                         }
                     }
                     .pickerStyle(MenuPickerStyle())
-                    .frame(width: 80) // Fixed width to ensure fit
+                    .frame(width: 80)
                 }
             }
 
